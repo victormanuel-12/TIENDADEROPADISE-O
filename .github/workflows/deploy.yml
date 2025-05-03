@@ -1,9 +1,8 @@
-name: Deploy HTML/CSS to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - main  # Cambia a 'master' o otra rama si es necesario
+    branches: [main]  # Cambia a "master" si es tu rama principal
 
 permissions:
   contents: read
@@ -15,25 +14,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4  # Última versión estable (Q2 2025)
+        uses: actions/checkout@v4
 
-      - name: Prepare deployment folder
+      - name: Verify files
+        run: |
+          echo "Estructura del proyecto:"
+          ls -R html css  # Verifica que los archivos existen
+
+      - name: Prepare deployment
         run: |
           mkdir -p public
-          cp -r html/* public/
-          cp -r css public/
-          # Opcional: Añade compresión de assets
-          find public -type f -exec gzip -9 {} \; -exec mv {}.gz {} \;
+          cp -r html/* public/ || { echo "❌ Error al copiar HTML"; exit 1; }
+          cp -r css public/ || { echo "❌ Error al copiar CSS"; exit 1; }
+          echo "✅ Contenido de public/:"
+          ls -R public  # Debug
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4  # Versión actualizada
+        uses: actions/configure-pages@v4
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3  # Nueva versión (2025)
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: public
-          compression-level: 9  # Compresión máxima
+          path: public/
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v3  # Versión más reciente
-        timeout-minutes: 5  # Límite de tiempo explícito
+        uses: actions/deploy-pages@v3
