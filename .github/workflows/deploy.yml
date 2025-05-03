@@ -2,7 +2,7 @@ name: Deploy Static Site to GitHub Pages
 
 on:
   push:
-    branches: [ main ]  # Cambia si usas otra rama
+    branches: [main]
 
 permissions:
   contents: read
@@ -16,46 +16,49 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Paso 1: Verificación crítica de estructura
-      - name: Validate project structure
+      - name: Debug - Mostrar estructura del proyecto
         run: |
-          if [ ! -d "html" ]; then
-            echo "❌ Error: Falta carpeta 'html'"
-            exit 1
-          fi
-          if [ ! -d "css" ]; then
-            echo "❌ Error: Falta carpeta 'CSS'"
-            exit 1
-          fi
-          echo "✅ Estructura válida:"
+          echo "📂 Estructura actual:"
           ls -R
+          echo "🔍 Archivos HTML:"
+          find html -type f -name "*.html"
+          echo "🎨 Archivos CSS:"
+          find css -type f -name "*.css" || echo "⚠️ ¿La carpeta se llama 'CSS' en lugar de 'css'?"
 
-      # Paso 2: Preparación con validación paso a paso
-      - name: Build deployment folder
+      - name: Preparar archivos para despliegue
         run: |
+          # Crear carpeta public
           mkdir -p public
-          echo "📦 Copiando HTML..."
-          cp -v html/*.html public/ || { echo "❌ Falló copia de HTML"; exit 1; }
           
-          echo "🎨 Copiando CSS..."
-          mkdir -p public/CSS
-          cp -v CSS/*.css public/CSS/ || { echo "❌ Falló copia de CSS"; exit 1; }
+          # Copiar HTML (con verificación)
+          echo "📦 Copiando archivos HTML..."
+          if ! cp -v html/*.html public/; then
+            echo "❌ Error: No se pudieron copiar los archivos HTML"
+            exit 1
+          fi
           
-          echo "📂 Resultado final:"
+          # Copiar CSS (versión a prueba de errores)
+          echo "🎨 Copiando archivos CSS..."
+          mkdir -p public/css
+          if ! cp -v css/*.css public/css/ 2>/dev/null; then
+            # Intento alternativo por si la carpeta se llama CSS
+            if ! cp -v CSS/*.css public/css/ 2>/dev/null; then
+              echo "❌ Error: No se encontró la carpeta CSS/css"
+              echo "ℹ️ Asegúrate que la carpeta existe y contiene archivos .css"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ Contenido final de public/:"
           ls -R public
 
-      # Paso 3: Configuración Pages
-      - name: Setup GitHub Pages
+      - name: Configurar GitHub Pages
         uses: actions/configure-pages@v4
 
-      # Paso 4: Subida con timeout
-      - name: Upload artifact
+      - name: Subir artefacto
         uses: actions/upload-pages-artifact@v3
         with:
           path: public/
-          retention-days: 1  # Reduce almacenamiento
 
-      # Paso 5: Despliegue con reintentos
-      - name: Deploy to GitHub Pages
+      - name: Desplegar
         uses: actions/deploy-pages@v3
-        timeout-minutes: 3
