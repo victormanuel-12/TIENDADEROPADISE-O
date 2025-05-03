@@ -1,8 +1,8 @@
-name: Deploy to GitHub Pages
+name: Deploy Static Site to GitHub Pages
 
 on:
   push:
-    branches: [main]  # Cambia a "master" si es tu rama principal
+    branches: [ main ]  # Cambia si usas otra rama
 
 permissions:
   contents: read
@@ -13,29 +13,49 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify files
+      # Paso 1: Verificación crítica de estructura
+      - name: Validate project structure
         run: |
-          echo "Estructura del proyecto:"
-          ls -R html css  # Verifica que los archivos existen
+          if [ ! -d "html" ]; then
+            echo "❌ Error: Falta carpeta 'html'"
+            exit 1
+          fi
+          if [ ! -d "CSS" ]; then
+            echo "❌ Error: Falta carpeta 'CSS'"
+            exit 1
+          fi
+          echo "✅ Estructura válida:"
+          ls -R
 
-      - name: Prepare deployment
+      # Paso 2: Preparación con validación paso a paso
+      - name: Build deployment folder
         run: |
           mkdir -p public
-          cp -r html/* public/ || { echo "❌ Error al copiar HTML"; exit 1; }
-          cp -r css public/ || { echo "❌ Error al copiar CSS"; exit 1; }
-          echo "✅ Contenido de public/:"
-          ls -R public  # Debug
+          echo "📦 Copiando HTML..."
+          cp -v html/*.html public/ || { echo "❌ Falló copia de HTML"; exit 1; }
+          
+          echo "🎨 Copiando CSS..."
+          mkdir -p public/CSS
+          cp -v CSS/*.css public/CSS/ || { echo "❌ Falló copia de CSS"; exit 1; }
+          
+          echo "📂 Resultado final:"
+          ls -R public
 
-      - name: Setup Pages
+      # Paso 3: Configuración Pages
+      - name: Setup GitHub Pages
         uses: actions/configure-pages@v4
 
+      # Paso 4: Subida con timeout
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: public/
+          retention-days: 1  # Reduce almacenamiento
 
+      # Paso 5: Despliegue con reintentos
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v3
+        timeout-minutes: 3
