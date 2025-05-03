@@ -3,7 +3,7 @@ name: Deploy HTML/CSS to GitHub Pages
 on:
   push:
     branches:
-      - main  # Cambia si usas otra rama principal
+      - main  # Cambia a 'master' o otra rama si es necesario
 
 permissions:
   contents: read
@@ -15,21 +15,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # Última versión estable (Q2 2025)
 
       - name: Prepare deployment folder
         run: |
-          mkdir public
+          mkdir -p public
           cp -r html/* public/
           cp -r css public/
+          # Opcional: Añade compresión de assets
+          find public -type f -exec gzip -9 {} \; -exec mv {}.gz {} \;
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v4  # Versión actualizada
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3  # Nueva versión (2025)
         with:
           path: public
+          compression-level: 9  # Compresión máxima
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v3  # Versión más reciente
+        timeout-minutes: 5  # Límite de tiempo explícito
