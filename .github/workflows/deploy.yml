@@ -23,7 +23,7 @@ jobs:
             echo "❌ Error: Falta carpeta 'html'"
             exit 1
           fi
-          if [ ! -d "CSS" ]; then
+          if [ ! -d "css" ]; then
             echo "❌ Error: Falta carpeta 'CSS'"
             exit 1
           fi
